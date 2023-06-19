@@ -1,0 +1,488 @@
+--exercitiul 10
+CREATE SEQUENCE secventa_categorie
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_editura
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_traducator
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_autor
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_editor
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_carte
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_utilizator
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_grup
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999999999999
+NOCYCLE;
+
+CREATE SEQUENCE secventa_postare
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+--exercitiul 11
+CREATE TABLE CATEGORIE
+(
+    id_categorie NUMBER(3) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL
+);
+
+CREATE TABLE EDITURA
+(
+    id_editura NUMBER(9) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    data_infiintare DATE NOT NULL
+);
+
+CREATE TABLE TRADUCATOR
+(
+    id_traducator NUMBER(9) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    prenume VARCHAR2(25) NOT NULL
+);
+
+CREATE TABLE AUTOR
+(
+    id_autor NUMBER(9) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    prenume VARCHAR2(25) NOT NULL,
+    data_debut DATE NOT NULL
+);
+
+CREATE TABLE EDITOR
+(
+    id_editor NUMBER(9) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    prenume VARCHAR2(25) NOT NULL,
+    data_debut DATE NOT NULL
+);
+
+CREATE TABLE CARTE
+(
+    id_carte NUMBER(18) PRIMARY KEY,
+    nume VARCHAR2(50) NOT NULL,
+    nr_capitole NUMBER(3) NOT NULL,
+    nr_pagini NUMBER(4) NOT NULL,
+    isbn VARCHAR2(13) NOT NULL CHECK(LENGTH(isbn)=10 or LENGTH(isbn)=13),
+    cost_productie NUMBER(2),
+    pret NUMBER(3) NOT NULL,
+    limba VARCHAR2(15) NOT NULL,
+    id_traducator NUMBER(3) REFERENCES TRADUCATOR(id_traducator)
+);
+
+CREATE TABLE UTILIZATOR
+(
+    id_utilizator NUMBER(9) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    prenume VARCHAR2(25) NOT NULL,
+    nume_cont VARCHAR2(25) UNIQUE NOT NULL,
+    parola VARCHAR2(25) NOT NULL,
+    data_nasterii DATE,
+    email VARCHAR2(50) NOT NULL,
+    nr_telefon VARCHAR2(15)
+);
+
+CREATE TABLE GRUP
+(
+    id_grup NUMBER(18) PRIMARY KEY,
+    nume VARCHAR2(25) NOT NULL,
+    nr_membrii NUMBER(7) NOT NULL
+);
+
+CREATE TABLE POSTARE
+(
+    id_utilizator NUMBER(9) REFERENCES UTILIZATOR(id_utilizator) NOT NULL,
+    id_postare NUMBER(9) NOT NULL,
+    continut VARCHAR2(4000) NOT NULL,
+    nr_aprecieri NUMBER(9) NOT NULL,
+    nr_comentarii NUMBER(18) DEFAULT 0,
+    tip_postare VARCHAR2(8) NOT NULL CHECK(tip_postare='POSTARE' or tip_postare='RECENZIE'),
+    PRIMARY KEY (id_utilizator, id_postare)
+);
+
+CREATE TABLE RECENZIE
+(
+    id_utilizator NUMBER(9) NOT NULL,
+    id_postare NUMBER(9) NOT NULL,
+    id_carte NUMBER(9) REFERENCES CARTE(id_carte) NOT NULL,
+    nr_stele NUMBER(2,1) NOT NULL CHECK(nr_stele IN (0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)),
+    PRIMARY KEY (id_utilizator, id_postare, id_carte),
+    FOREIGN KEY (id_utilizator, id_postare) REFERENCES POSTARE(id_utilizator,id_postare)
+);
+
+CREATE TABLE COMENTARIU
+(
+    id_utilizator NUMBER(9) NOT NULL,
+    id_postare NUMBER(9) NOT NULL,
+    id_comentariu NUMBER(18) NOT NULL,
+    continut VARCHAR2(4000) NOT NULL,
+    id_utilizator_comentariu REFERENCES UTILIZATOR(id_utilizator) NOT NULL,
+    PRIMARY KEY (id_utilizator, id_postare, id_comentariu),
+    FOREIGN KEY (id_utilizator, id_postare) REFERENCES POSTARE(id_utilizator,id_postare)
+);
+
+CREATE TABLE CARTE_CATEGORIE
+(
+    id_carte NUMBER(18) REFERENCES CARTE(id_carte) NOT NULL,
+    id_categorie NUMBER(3) REFERENCES CATEGORIE(id_categorie) NOT NULL,
+    PRIMARY KEY (id_carte, id_categorie)
+);
+
+CREATE TABLE CARTE_EDITURA
+(
+    id_editura NUMBER(9) REFERENCES EDITURA(id_editura) NOT NULL,
+    id_carte NUMBER(18) REFERENCES CARTE(id_carte) NOT NULL,
+    nr_exemplare NUMBER(9),
+    PRIMARY KEY (id_editura, id_carte)
+);
+
+CREATE TABLE CARTE_UTILIZATOR
+(
+    id_utilizator NUMBER(9) REFERENCES UTILIZATOR(id_utilizator) NOT NULL,
+    id_carte NUMBER(18) REFERENCES CARTE(id_carte) NOT NULL,
+    data_inceput DATE NOT NULL,
+    data_sfarsit DATE NOT NULL,
+    CONSTRAINT check_date_valide CHECK(data_inceput<=data_sfarsit)
+);
+
+CREATE TABLE UTILIZATOR_GRUP
+(
+    id_utilizator NUMBER(9) REFERENCES UTILIZATOR(id_utilizator) NOT NULL,
+    id_grup NUMBER(18) REFERENCES GRUP(id_grup) NOT NULL,
+    data_intrare DATE NOT NULL,
+    PRIMARY KEY (id_utilizator, id_grup)
+);
+
+CREATE TABLE CARTE_AUTOR_EDITOR
+(
+    id_autor NUMBER(9) REFERENCES AUTOR(id_autor) NOT NULL,
+    id_editor NUMBER(9) REFERENCES EDITOR(id_editor) NOT NULL,
+    id_carte NUMBER(18) REFERENCES CARTE(id_carte) NOT NULL,
+    pret NUMBER(6),
+    PRIMARY KEY (id_autor, id_editor, id_carte)
+);
+
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'Fantastic');
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'SF');
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'Thriller');
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'Romanta');
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'Groaza');
+INSERT INTO CATEGORIE(id_categorie, nume)
+VALUES (secventa_categorie.nextval,'Motivational');
+INSERT INTO CATEGORIE(id_categorie, nume) 
+VALUES (secventa_categorie.nextval,'Politica');
+
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Nemira',TO_DATE('01-01-1991','dd-mm-yyyy'));
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Polirom',TO_DATE('24-06-1999','dd-mm-yyyy'));
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Paladin',TO_DATE('19-09-2008','dd-mm-yyyy'));
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Gollancz',TO_DATE('23-05-1998','dd-mm-yyyy'));
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Trei',TO_DATE('25-08-1994','dd-mm-yyyy'));
+INSERT INTO EDITURA(id_editura, nume, data_infiintare)
+VALUES (secventa_editura.nextval,'Tor Books',TO_DATE('02-04-1980','dd-mm-yyyy'));
+
+INSERT INTO TRADUCATOR(id_traducator, nume, prenume)
+VALUES (secventa_traducator.nextval,'Popescu','Alexandru');
+INSERT INTO TRADUCATOR(id_traducator, nume, prenume)
+VALUES (secventa_traducator.nextval,'Gheorghe','Stefan');
+INSERT INTO TRADUCATOR(id_traducator, nume, prenume)
+VALUES (secventa_traducator.nextval,'Brincus','Mihai');
+INSERT INTO TRADUCATOR(id_traducator, nume, prenume)
+VALUES (secventa_traducator.nextval,'Crainicul','George');
+INSERT INTO TRADUCATOR(id_traducator, nume, prenume)
+VALUES (secventa_traducator.nextval,'Rusu','Florin');
+
+INSERT INTO AUTOR(id_autor, nume, prenume,data_debut)
+VALUES (secventa_autor.nextval,'Haig','Matt',TO_DATE('04-02-2002','dd-mm-yyyy'));
+INSERT INTO AUTOR(id_autor, nume, prenume, data_debut)
+VALUES (secventa_autor.nextval,'King','Stephen',TO_DATE('06-06-1970','dd-mm-yyyy'));
+INSERT INTO AUTOR(id_autor, nume, prenume, data_debut)
+VALUES (secventa_autor.nextval,'Sanderson','Brandon',TO_DATE('21-04-2005','dd-mm-yyyy'));
+INSERT INTO AUTOR(id_autor, nume, prenume, data_debut)
+VALUES (secventa_autor.nextval,'Ferriss','Tim',TO_DATE('01-08-2007','dd-mm-yyyy'));
+INSERT INTO AUTOR(id_autor, nume, prenume, data_debut)
+VALUES (secventa_autor.nextval,'Brown','Pierce',TO_DATE('28-01-2014','dd-mm-yyyy'));
+INSERT INTO AUTOR(id_autor, nume, prenume, data_debut)
+VALUES (secventa_autor.nextval,'Niven','Jennifer',TO_DATE('06-01-2015','dd-mm-yyyy'));
+
+INSERT INTO EDITOR(id_editor, nume, prenume, data_debut)
+VALUES (secventa_editor.nextval,'Olsen','Clark',TO_DATE('20-11-2020','dd-mm-yyyy'));
+INSERT INTO EDITOR(id_editor, nume, prenume, data_debut)
+VALUES (secventa_editor.nextval,'Adams','Purple',TO_DATE('10-12-2019','dd-mm-yyyy'));
+INSERT INTO EDITOR(id_editor, nume, prenume, data_debut)
+VALUES (secventa_editor.nextval,'Driver','Abraham',TO_DATE('04-05-1988','dd-mm-yyyy'));
+INSERT INTO EDITOR(id_editor, nume, prenume, data_debut)
+VALUES (secventa_editor.nextval,'Park','Mark',TO_DATE('09-03-1997','dd-mm-yyyy'));
+INSERT INTO EDITOR(id_editor, nume, prenume, data_debut)
+VALUES (secventa_editor.nextval,'Bryant','Arthur',TO_DATE('10-08-2003','dd-mm-yyyy'));
+
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Misery',20,356,'1235654213233',5,12,'romana',1);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Cateva motive sa iubesti viata',26,240,'1233334456433',4,11,'romana',2);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Furia rosie',44,506,'2342812937123',6,13,'romana',3);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'JFK 22.11.63',60,720,'9786064309075',8,15,'romana',1);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'4 ore-saptamana de lucru',23,496,'9786069130193',6,13,'romana',4);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Toate acele locuri minunate',31,401,'9786067194098',5,12,'romana',5);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Ultimul Imperiu',45,816,'9789737078230',7,14,'romana',2);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba, id_traducator)
+VALUES (secventa_carte.nextval,'Mr. Mercedes',39,488,'9786067581799',5,12,'romana',1);
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba)
+VALUES (secventa_carte.nextval,'The Final Empire',45,537,'1222234568',7,14,'engleza');
+INSERT INTO CARTE(id_carte, nume, nr_capitole, nr_pagini, isbn, cost_productie, pret, limba)
+VALUES (secventa_carte.nextval,'Calamity',51,421,'1034985610113',6,13,'engleza');
+
+INSERT INTO UTILIZATOR(id_utilizator, nume, prenume, nume_cont, parola, data_nasterii, email, nr_telefon)
+VALUES (secventa_utilizator.nextval,'Buzatu','Giulian','Giulian617','ImiPlaceMatematica',TO_DATE('16-07-2003','dd-mm-yyyy'),'buzatugiulian@yahoo.com','0754641082');
+INSERT INTO UTILIZATOR(id_utilizator, nume, prenume, nume_cont, parola, data_nasterii, email, nr_telefon)
+VALUES (secventa_utilizator.nextval,'Neculae','Andrei','Andrei12','ImiPlaceSaMananc',TO_DATE('7-10-2003','dd-mm-yyyy'),'neculaefabian@gmail.com','0722227890');
+INSERT INTO UTILIZATOR(id_utilizator, nume, prenume, nume_cont, parola, data_nasterii, email, nr_telefon)
+VALUES (secventa_utilizator.nextval,'Ilie','Dumitru','TheWinner','TheWinnerNeverLoses',TO_DATE('05-05-1998','dd-mm-yyyy'),'thewinner@gmail.com','0788899911');
+INSERT INTO UTILIZATOR(id_utilizator, nume, prenume, nume_cont, parola, data_nasterii, email)
+VALUES (secventa_utilizator.nextval,'Preda','Maria','MariaMP','AmMedia10HAHA',TO_DATE('19-03-2004','dd-mm-yyyy'),'mariamp@gmail.com');
+INSERT INTO UTILIZATOR(id_utilizator, nume, prenume, nume_cont, parola, email, nr_telefon)
+VALUES (secventa_utilizator.nextval,'Grigore','Mihai','MihaiSuntSmecher','SuntDinGalatiBoss','seful@gmail.com','0777777777');
+
+INSERT INTO GRUP(id_grup, nume, nr_membrii)
+VALUES (secventa_grup.nextval,'Despre carti',3);
+INSERT INTO GRUP(id_grup, nume, nr_membrii)
+VALUES (secventa_grup.nextval,'Comunitatea SF',2);
+INSERT INTO GRUP(id_grup, nume, nr_membrii)
+VALUES (secventa_grup.nextval,'Books for boys',4);
+INSERT INTO GRUP(id_grup, nume, nr_membrii)
+VALUES (secventa_grup.nextval,'Romania pe Goodreads',5);
+INSERT INTO GRUP(id_grup, nume, nr_membrii)
+VALUES (secventa_grup.nextval,'FMI',5);
+
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, tip_postare)
+VALUES (1,secventa_postare.nextval,'Ce parere aveti despre atacul asupra literaturii SF?',1,'POSTARE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, nr_comentarii, tip_postare)
+VALUES (4,secventa_postare.nextval,'Top 10 carti pe care le-ati citit?',2,2,'POSTARE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, nr_comentarii, tip_postare)
+VALUES (2,secventa_postare.nextval,'Am de gand sa citesc ceva din categoria fantastic. Recomandari?',2,1,'POSTARE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, tip_postare)
+VALUES (1,secventa_postare.nextval,'Mi s-a parut foarte bine structurata si cu idee misto.',3,'RECENZIE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, nr_comentarii, tip_postare)
+VALUES (1,secventa_postare.nextval,'Foarte dezamagitoare.',2,1,'RECENZIE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, nr_comentarii, tip_postare)
+VALUES (3,secventa_postare.nextval,'Cea mai faina carte citita de mine.',3,1,'RECENZIE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, tip_postare)
+VALUES (2,secventa_postare.nextval,'A rupt broooo',1,'RECENZIE');
+INSERT INTO POSTARE(id_utilizator, id_postare, continut, nr_aprecieri, tip_postare)
+VALUES (5,secventa_postare.nextval,'Nota 9/10. Se putea mai bine. Mi-am irosit timpul.',4,'RECENZIE');
+
+INSERT INTO RECENZIE(id_utilizator, id_postare, id_carte, nr_stele)
+VALUES (1,4,1,4);
+INSERT INTO RECENZIE(id_utilizator, id_postare, id_carte, nr_stele)
+VALUES (1,5,2,1.5);
+INSERT INTO RECENZIE(id_utilizator, id_postare, id_carte, nr_stele)
+VALUES (3,6,9,5);
+INSERT INTO RECENZIE(id_utilizator, id_postare, id_carte, nr_stele)
+VALUES (2,7,4,5);
+INSERT INTO RECENZIE(id_utilizator, id_postare, id_carte, nr_stele)
+VALUES (5,8,2,4.5);
+
+INSERT INTO COMENTARIU(id_utilizator, id_postare, id_comentariu, continut, id_utilizator_comentariu)
+VALUES (4,2,1,'Mi-este greu sa alcatuiesc un top 10... Vrei sa iesim zilele viitoare si sa discutam despre carti?',1);
+INSERT INTO COMENTARIU(id_utilizator, id_postare, id_comentariu, continut, id_utilizator_comentariu)
+VALUES (4,2,2,'Da, suna foarte bine. (Spoiler alert:nu o sa vin)',4);
+INSERT INTO COMENTARIU(id_utilizator, id_postare, id_comentariu, continut, id_utilizator_comentariu)
+VALUES (2,3,1,'The Final Empire e cartea potrivita.',3);
+INSERT INTO COMENTARIU(id_utilizator, id_postare, id_comentariu, continut, id_utilizator_comentariu)
+VALUES (1,5,1,'Imi pare rau sa aud asta bro=(',2);
+INSERT INTO COMENTARIU(id_utilizator, id_postare, id_comentariu, continut, id_utilizator_comentariu)
+VALUES (3,6,1,'Wow pare ca ti-a placut foarte mult. Cred ca o sa o incerc si eu.',2);
+
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (1,3);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (1,5);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (2,6);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (3,1);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (3,2);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (4,1);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (4,2);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (4,3);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (4,4);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (5,6);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (6,4);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (7,1);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (8,3);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (8,5);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (9,1);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (10,1);
+INSERT INTO CARTE_CATEGORIE(id_carte, id_categorie)
+VALUES (10,2);
+
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (1,1,2000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (1,2,3000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (3,3,2500);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (1,4,2500);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (2,5,800);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (5,6,5000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (5,7,1500);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (1,8,1000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (4,9,400000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (6,9,800000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (4,10,100000);
+INSERT INTO CARTE_EDITURA(id_editura,id_carte,nr_exemplare)
+VALUES (6,10,300000);
+
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (1,1,TO_DATE('03-03-2020','dd-mm-yyyy'),TO_DATE('07-03-2020','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (1,2,TO_DATE('03-06-2019','dd-mm-yyyy'),TO_DATE('08-06-2019','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (1,7,TO_DATE('07-11-2022','dd-mm-yyyy'),TO_DATE('17-11-2022','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (2,4,TO_DATE('03-05-2020','dd-mm-yyyy'),TO_DATE('17-05-2020','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (2,5,TO_DATE('01-07-2021','dd-mm-yyyy'),TO_DATE('08-08-2021','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (3,9,TO_DATE('22-03-2022','dd-mm-yyyy'),TO_DATE('07-04-2022','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (3,10,TO_DATE('10-09-2020','dd-mm-yyyy'),TO_DATE('14-09-2020','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (4,3,TO_DATE('13-10-2018','dd-mm-yyyy'),TO_DATE('23-10-2018','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (4,6,TO_DATE('03-12-2022','dd-mm-yyyy'),TO_DATE('18-12-2022','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (4,8,TO_DATE('04-03-2023','dd-mm-yyyy'),TO_DATE('10-03-2023','dd-mm-yyyy'));
+INSERT INTO CARTE_UTILIZATOR(id_utilizator,id_carte,data_inceput,data_sfarsit)
+VALUES (5,2,TO_DATE('03-03-2019','dd-mm-yyyy'),TO_DATE('07-03-2019','dd-mm-yyyy'));
+
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (1,1,TO_DATE('01-01-2019','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (3,1,TO_DATE('02-01-2019','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (4,1,TO_DATE('02-01-2019','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (1,2,TO_DATE('11-11-2020','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (2,2,TO_DATE('21-11-2020','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (1,3,TO_DATE('10-12-2020','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (2,3,TO_DATE('11-12-2020','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (3,3,TO_DATE('12-01-2021','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (5,3,TO_DATE('13-01-2021','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (1,4,TO_DATE('15-03-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (2,4,TO_DATE('16-03-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (3,4,TO_DATE('17-03-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (4,4,TO_DATE('19-03-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (5,4,TO_DATE('30-05-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (1,5,TO_DATE('10-11-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (2,5,TO_DATE('13-11-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (3,5,TO_DATE('13-11-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (4,5,TO_DATE('15-11-2022','dd-mm-yyyy'));
+INSERT INTO UTILIZATOR_GRUP(id_utilizator,id_grup,data_intrare)
+VALUES (5,5,TO_DATE('24-12-2022','dd-mm-yyyy'));
+
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (2,1,1,10000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (1,2,2,15000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (5,3,3,20000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (2,2,4,8000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (4,4,5,20000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte,pret)
+VALUES (6,5,6,16000);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte)
+VALUES (3,3,7);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte)
+VALUES (2,3,8);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte)
+VALUES (3,2,9);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte)
+VALUES (3,1,10);
+INSERT INTO CARTE_AUTOR_EDITOR(id_autor,id_editor,id_carte)
+VALUES (2,2,10);
+
+COMMIT;

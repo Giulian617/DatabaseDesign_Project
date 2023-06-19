@@ -1,0 +1,140 @@
+--Exercitiul 12
+--Cerința: Să se afișeze numele editurilor care au publicat cel puțin o carte care are exact doi autori.  
+--Pentru rezolvare se îndeplinește cerința: subcereri sincronizate în care intervin cel puțin 3 tabele. 
+
+SELECT e.nume
+FROM editura e
+WHERE 2=ANY(SELECT COUNT(cae.id_carte)
+       FROM carte_editura cee JOIN carte c ON (cee.id_carte=c.id_carte)
+                              JOIN carte_autor_editor cae ON(c.id_carte=cae.id_carte)
+       WHERE cee.id_editura=e.id_editura
+       GROUP BY(cae.id_carte)
+       HAVING COUNT(cae.id_carte)>=2
+       );
+
+--Cerința: Să se afișeze numele grupurilor care au cel puțin un utilizator care are în numele contului subsecvența 'er'. Se vor elimina duplicatele.
+--Pentru rezolvare se îndeplinesc cerințele: subcereri sincronizate în clauza FROM și utilizarea a 2 funcții pe șiruri de caractere.
+
+SELECT DISTINCT g.nume
+FROM grup g JOIN utilizator_grup ug on (g.id_grup=ug.id_grup)
+            JOIN (SELECT id_utilizator
+                  FROM utilizator
+                  WHERE INSTR(LOWER(utilizator.nume_cont),'er')!=0) semiu on (semiu.id_utilizator=ug.id_utilizator); 
+
+--Cerința: Să se afișeze numele contului fiecarui utilizator care a citit cel puțin o carte care a avut un numar de exemplare mai mare de 7500. 
+--Pentru rezolvare se îndeplinește cerința: grupări de date cu subcereri nesincronizate în care intervin cel puțin 3 tabele, funcții grup, filtrare la nivel de grupuri.
+
+SELECT temp.nume_cont
+FROM (SELECT u.nume_cont, cee.nr_exemplare
+      FROM utilizator u join carte_utilizator cu on(u.id_utilizator=cu.id_utilizator)
+                        join carte c on(cu.id_carte=c.id_carte)
+                        join carte_editura cee on(cee.id_carte=c.id_carte)) temp
+GROUP BY temp.nume_cont
+HAVING SUM(temp.nr_exemplare)>7500;
+
+
+--Cerința: Să se afișeze numele și prenumele autorilor, ordonate crescător după nume și apoi după prenume, împreună cu următoarele mesaje: dacă autorul nu are nicio carte pentru care se știe prețul plătit editorului, atunci se va afișa „Autorul este misterios” , dacă există vreun preț de cel puțin 15000, se va afișa „Autorul este foarte generos”, altfel se va afișa „Autorul nu este prea generos”.
+--Pentru rezolvare se îndeplinesc cerințele: ordonări și utilizarea funcțiilor NVL și DECODE (în cadrul aceleiași cereri),utilizarea a cel puțin o expresie CASE și utilizarea clauzei WITH.
+
+WITH valoare_maxima AS (SELECT id_autor, MAX(NVL(pret,-1000)) pret_maxim
+                        FROM carte_autor_editor 
+                        GROUP BY id_autor
+                        )
+SELECT nume, prenume, DECODE(
+                             CASE
+                                 WHEN pret_maxim=-1000 THEN 1
+                                 WHEN pret_maxim>=15000 THEN 2
+                                 ELSE 3
+                             END,
+                             1,'Autorul este misterios',
+                             2,'Autorul este foarte generos',
+                             3,'Autorul nu este prea generos'
+                            ) "Cum este autorul?"
+FROM autor a JOIN valoare_maxima ON(a.id_autor=valoare_maxima.id_autor)
+ORDER BY nume,prenume;
+
+--Cerința: Să se afișeze următoarea zi de luni pentru fiecare dată de început a citirii unei cărți de către un utilizator doar pentru cazurile în care diferența dintre data de început și cea de sfârșit este de cel puțin jumătate de lună.
+--Pentru rezolvare se îndeplinește cerința: utilizarea a cel puține 2 funcții pe date calendaristice.
+
+SELECT id_utilizator,id_carte, NEXT_DAY(data_inceput,'Monday')
+FROM carte_utilizator
+WHERE MONTHS_BETWEEN(data_sfarsit,data_inceput)>=0.5;
+
+--Exercitiul 13
+--Cerința: Să se actualizeze numărul de exemplare pentru cărțile care au cel puțin 40 de capitole. Pentru fiecare carte să se adauge 200 de exemplare.
+
+UPDATE CARTE_EDITURA
+SET nr_exemplare=nr_exemplare+200
+WHERE id_carte IN (SELECT id_carte FROM CARTE WHERE nr_capitole>=40);
+
+--Cerința: Să se actualizeze numele și prenumele traducătorului cu id-ul egal cu 1 numai dacă a tradus o carte pentru care Stephen King este autor. Noul nume să fie „Toma”, iar prenumele „Ruxandra”.
+
+UPDATE TRADUCATOR
+SET nume='Toma', prenume='Ruxandra'
+WHERE id_traducator=1 AND EXISTS (SELECT 1
+                                  FROM carte join traducator using(id_traducator)
+                                             join carte_autor_editor using(id_carte)
+                                             join autor using(id_autor)
+                                  WHERE upper(autor.nume)='KING' AND upper(autor.prenume)='STEPHEN');
+
+--Cerința: Să se actualizeze prețul în tabelul CARTE_AUTOR_EDITOR. Toate prețurile mai mari sau egale ca 10000 ale autorului Stephen King vor crește cu 0.5, iar restul vor rămâne la fel.
+
+UPDATE CARTE_AUTOR_EDITOR
+SET pret=pret*1.5
+WHERE pret>=10000 AND id_autor=(SELECT id_autor
+                                FROM autor
+                                WHERE upper(autor.nume)='KING' AND upper(autor.prenume)='STEPHEN');
+
+--Cerința: Să se șteargă intrările din tabelul CARTE_UTILIZATOR pentru care data inceperii cărții este în luna decembrie și au cel puțin 400 de pagini.
+
+DELETE FROM carte_utilizator
+WHERE TO_CHAR(data_inceput,'MON')='DEC' AND 400<(SELECT nr_pagini 
+                                                 FROM carte 
+                                                 WHERE carte_utilizator.id_carte=carte.id_carte);
+
+--Cerința: Să se șteargă din tabelul CARTE_CATEGORIE cartea cu id-ul 4 categoria a 3-a, doar dacă aceasta are peste 500 de pagini.
+
+DELETE FROM carte_categorie 
+WHERE id_carte=4 AND id_categorie=2 AND 500<(SELECT nr_pagini 
+                                             FROM carte 
+                                             WHERE carte_categorie.id_carte=carte.id_carte);
+
+--Cerința: Să se șteargă din tabelul CARTE_CATEGORIE cărți categoria a 4-a doar dacă ele au peste 47 de capitole.
+
+DELETE FROM carte_categorie 
+WHERE id_categorie=4 AND 47<(SELECT nr_capitole 
+                             FROM carte 
+                             WHERE carte_categorie.id_carte=carte.id_carte);
+
+--Exercițiul 15
+--Cerința: Să se afișeze numele categoriei împreună cu numele de utilizator pentru fiecare utilizator care a citit o carte din categoria respectivă. Categoriile care nu au nicio carte se vor afișa. Se vor elimina duplicatele.
+--Cerere care utilizează operația outer-join pe minimum 4 tabele. 
+
+SELECT DISTINCT cat.id_categorie,u.id_utilizator
+FROM categorie cat LEFT JOIN carte_categorie cc ON(cat.id_categorie=cc.id_categorie)
+                   LEFT JOIN carte c ON(cc.id_carte=c.id_carte)
+                   LEFT JOIN carte_utilizator cu ON(c.id_carte=cu.id_carte)
+                   LEFT JOIN utilizator u ON(cu.id_utilizator=u.id_utilizator);
+
+--Cerința: Să se afișeze numele și prenumele tuturor editorilor care lucrează la cel puțin aceleași proiecte ca editorul cu id-ul 1.
+--Cerere care simulează operatorul DIVISION.
+
+SELECT e.nume, e.prenume
+FROM editor e JOIN carte_autor_editor cae ON(e.id_editor=cae.id_editor)
+WHERE id_autor IN (SELECT id_autor
+                   FROM carte_autor_editor
+                   WHERE id_editor=1) AND e.id_editor!=1
+GROUP BY e.nume, e.prenume, e.id_editor
+HAVING COUNT(DISTINCT id_autor)=(SELECT COUNT(id_autor)
+                  FROM carte_autor_editor
+                  WHERE id_editor=1);
+
+--Cerința: Să se afișeze numele, prenumele și suma cheltuită a primilor 3 autori din topul autorilor care au plătit cel mai mult un editor pentru editarea unei cărți.
+--Cerere pentru analiza top-n.
+SELECT a.nume, a.prenume, top.suma, rownum
+FROM autor a join(SELECT id_autor, NVL(pret,0) suma
+                  FROM carte_autor_editor
+                  ORDER BY 2 DESC
+                 )top on(a.id_autor=top.id_autor)
+WHERE rownum<=3
+ORDER BY suma DESC;
